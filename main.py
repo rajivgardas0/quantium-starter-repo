@@ -1,20 +1,41 @@
-import pandas as pd
+import csv
+import os
 
-# Read the CSV files into DataFrames
-df1 = pd.read_csv('data/daily_sales_data_0.csv')
-df2 = pd.read_csv('data/daily_sales_data_1.csv')
-df3 = pd.read_csv('data/daily_sales_data_2.csv')
+DATA_DIRECTORY = "./data"
+OUTPUT_FILE_PATH = "./formatted_data.csv"
 
-# Concatenate the DataFrames into a single DataFrame
-combined_df = pd.concat([df1, df2, df3])
+# open the output file
+with open(OUTPUT_FILE_PATH, "w") as output_file:
+    writer = csv.writer(output_file)
 
-# Clean and filter the rows
-combined_df['product'] = combined_df['product'].str.strip().str.lower()
-filtered_df = combined_df[combined_df['product'] == 'pink morsel']
-filtered_df.loc[:,'sales'] = filtered_df['quantity'] * filtered_df['price']
+    # add a csv header
+    header = ["sales", "date", "region"]
+    writer.writerow(header)
 
-# Select and reorder the desired columns
-output_df = filtered_df[['sales', 'date', 'region']]
+    # iterate through all files in the data directory
+    for file_name in os.listdir(DATA_DIRECTORY):
+        # open the csv file for reading
+        with open(f"{DATA_DIRECTORY}/{file_name}", "r") as input_file:
+            reader = csv.reader(input_file)
+            # iterate through each row in the csv file
+            row_index = 0
+            for input_row in reader:
+                # if this row is not the csv header, process it
+                if row_index > 0:
+                    # collect data from row
+                    product = input_row[0]
+                    raw_price = input_row[1]
+                    quantity = input_row[2]
+                    transaction_date = input_row[3]
+                    region = input_row[4]
 
-# Save the output DataFrame to a CSV file
-output_df.to_csv('output.csv', index=False)
+                    # if this is a pink morsel transaction, process it
+                    if product == "pink morsel":
+                        # finish formatting data
+                        price = float(raw_price[1:])
+                        sale = price * int(quantity)
+
+                        # write the row to output file
+                        output_row = [sale, transaction_date, region]
+                        writer.writerow(output_row)
+                row_index += 1
